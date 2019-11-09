@@ -78,12 +78,15 @@ def main():
         os.makedirs(plotsdir, exist_ok=True)
     else:
         plotsdir = None
-    flats_directory = os.fsencode(indir)
+    indirectory = os.fsencode(indir)
+    if len(os.listdir(indirectory)) == 0:
+        print('Input directory is empty.')
+        return
     data = [['decay constant (pixels)', 'amplitude (ADU)', 'flux of image (ADU)', 'residue of first overscan (ratio)', 'sensor number', 'segment', 'run number']]
 
     out = csv.writer(open(outfile,'w'))
 
-    for root, dir, f in os.walk(flats_directory):
+    for root, dir, f in os.walk(indirectory):
         for file in f:
             filename = os.path.join(root, file).decode('UTF-8');
             if filename.endswith('.fits'):
