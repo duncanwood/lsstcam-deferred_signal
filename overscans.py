@@ -20,6 +20,8 @@ def exp_fit(x, c, A, B):
     return A * np.exp(-x/c) + B 
 
 def mean_overscans(imagefile, nexp=7, plots=None, verbose=False):
+    if nexp is None:
+        nexp = 7
     result = [] # decay constant, amplitude, flux of image, residue of first overscan, sensor number, segment, run number
     for segment in range(1,16+1):
         header = getheader(imagefile)
@@ -40,7 +42,8 @@ def mean_overscans(imagefile, nexp=7, plots=None, verbose=False):
         result.append([params[0],params[1],flat_mean,residue, *info])
         
         if verbose:
-            print(params)
+            print('Segment {seg}:\n  Decay    : {p[0]:<10.03g} pixels\n  Amplitude: {p[1]:<10.03g} '\
+                    'ADU\n  Offset   : {p[2]:<10.03g} ADU'.format(seg=segment, p=params))
         if plots is None:
             continue
         fig = plt.figure(figsize=(10,10))
@@ -64,14 +67,18 @@ def main():
     parser = argparse.ArgumentParser(description='Retrieve overscan information from flat test images.')
     parser.add_argument('indir', type=str, nargs=1, help='Directory with input files')
     parser.add_argument('out', type=str, nargs=1, help='Output file')
-    parser.add_argument('--npixels', type=int, nargs=1, help='Number of overscan pixels to fit with an exponential.')
+    parser.add_argument('--npixels', type=int, nargs='?',const=7, help='Number of overscan pixels to fit with an exponential.')
     parser.add_argument('--plots', type=str, nargs='?',const='plots', help='Save plots of overscan fits.')
+    parser.add_argument('--verbose',action="store_true", default=False, help='Print runtime information to stdout.')
 
     args = parser.parse_args()
 
     indir = args.indir[0]
     outfile = args.out[0]
-    npixels = args.npixels[0]
+    verbose = args.verbose is not None
+    if args.npixels is not None:
+        npixels = args.npixels.get(0)
+    else: npixels = None
     makeplots = args.plots is not None
     if makeplots:
         plotsdir = args.plots
@@ -91,7 +98,7 @@ def main():
             filename = os.path.join(root, file).decode('UTF-8');
             if filename.endswith('.fits'):
                 print('Checking file: ' + filename)
-                data = data + mean_overscans(filename, plots=plotsdir, nexp=npixels)
+                data = data + mean_overscans(filename, plots=plotsdir, nexp=npixels, verbose=verbose)
     out.writerows(data)
     return
 
